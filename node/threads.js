@@ -5,4 +5,18 @@
 // what functions in node std library use the threadpool (all 'fs' modules functions, some crypto stuff. Depends on OS )
 // change the thrad pool size of LIBUV
 // tasks running in threadpoo are the 'pendingOperations'
-console.log(__filename)
+// process.env.UV_THREADPOOL_SIZE = 6
+const Timer = require('./Timer')
+const timer = new Timer()
+
+crypto.pbkdf2('a', 'b', 100000, 512, 'sha512', () => {
+    console.log(`Hash: ${timer.elapseTime}`)
+})
+
+crypto.pbkdf2('a', 'b', 100000, 512, 'sha512', () => {
+    console.log(`Hash: ${timer.elapseTime}`)
+})
+
+crypto.pbkdf2('a', 'b', 100000, 512, 'sha512', () => {
+    console.log(`Hash: ${timer.elapseTime}`)
+})
