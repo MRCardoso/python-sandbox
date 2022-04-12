@@ -6,6 +6,7 @@
 // change the thrad pool size of LIBUV
 // tasks running in threadpoo are the 'pendingOperations'
 // process.env.UV_THREADPOOL_SIZE = 6
+const crypto = require('crypto')
 const Timer = require('./Timer')
 const timer = new Timer()
 

@@ -23,7 +23,7 @@ const doHash = () => {
 
 doRequest(() => console.log(`Http: ${timer.elapseTime}`))
 
-fs.readFile('test.js','utf8', () => {
+fs.readFile('multithread.js','utf8', () => {
     console.log(`FS: ${timer.elapseTime}`)
 })
 
