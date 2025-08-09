@@ -1,6 +1,7 @@
 import numpy as np
+import random
 from pysandbox.ecs.component import Component
-from pysandbox.helpers import progress_bar, normalize_terrain
+from pysandbox.helpers import progress_bar, normalize_terrain, normalize_text
 
 
 class Mask(Component):
@@ -8,19 +9,19 @@ class Mask(Component):
     display_name = "Radial Mask"
     strength: float = 2.5
     
-    def __init__(self, planet_name, size, strength=2.5):
-        super().__init__(planet_name, size)
+    def __init__(self, size, strength=2.5):
+        super().__init__(size)
         self.strength = strength
     
     def apply(self, heightmap):
-        print(f"\n - Radial Mask[{self.planet_name}]")
-        progress_bar(0)
+        print('')
+        progress_bar(0, prefix=normalize_text(self.display_name, 20))
         cx, cy = self.size // 2, self.size // 2
         X, Y = np.ogrid[:self.size, :self.size]
         dist = np.sqrt((X - cx) **2 + (Y - cy) **2)
         dist = dist / dist.max()
         heightmap *= 1.0 - dist ** self.strength
-        progress_bar(100)
+        progress_bar(100, prefix=normalize_text(self.display_name, 20))
         return heightmap
 
 
@@ -29,39 +30,54 @@ class River(Component):
     display_name = "Carve River"
     iterations = 400
     length = 5
-    def __init__(self, planet_name, size, iterations = 400, length = 5):
-        super().__init__(planet_name, size)
+    sea_level = 0.4
+    def __init__(self, size, iterations = 400, length = 5, sea_level = 0.4):
+        super().__init__(size)
         self.iterations = iterations
         self.length = length
+        self.sea_level = sea_level
 
     def apply(self, heightmap):
-        print(f"\n- Generate River[{self.planet_name}]")
-        for _ in range(self.length):
-            x, y = np.random.randint(100, 400), np.random.randint(100, 400)
-            for it in range(self.iterations):
-                progress_bar(((it + 1) / self.iterations) * 100)
+        print('')
+        if not self.iterations or not self.length:
+            raise Exception("The amount of length or iterations can't be zero")
+        for it in range(self.length):
+            x, y = (
+                np.random.randint(int(self.iterations/4), self.iterations),
+                np.random.randint(int(self.iterations/4), self.iterations)
+            )
+            progress_bar(((it + 1) / self.length) * 100, prefix=normalize_text(self.display_name, 20))
+            for _ in range(self.iterations):
+                if heightmap[x, y] <= self.sea_level:
+                    break
                 heightmap[x, y] -= 0.03
-                neighbors = [(x+i, y+j) for i in [-1,0,1] for j in [-1,0,1] if 0 <= x+i < self.size and 0 <= y+j < self.size]
+                neighbors = [
+                    (x+i, y+j)
+                    for i in [-1,0,1] 
+                    for j in [-1,0,1]
+                    if 0 <= x+i < self.size and 0 <= y+j < self.size
+                ]
+                if random.random() < 0.15:
+                    random.shuffle(neighbors)
                 x, y = min(neighbors, key=lambda p: heightmap[p[0], p[1]])
-                if heightmap[x, y] < 0.1: break
         # Normalize
         return normalize_terrain(heightmap)
 
 class Erosion(Component):
-    # 2. apply simple hydraulic erosion
+    # apply simple hydraulic erosion
     name = "Erosion"
     display_name = "Erosion"
     iterations=10000
     strength = 0.01
-    def __init__(self, planet_name, size, iterations=10000, strength=0.01):
-        super().__init__(planet_name, size)
+    def __init__(self, size, iterations=10000, strength=0.01):
+        super().__init__(size)
         self.iterations = iterations
         self.strength = strength
 
     def apply(self, heightmap):
-        print(f"\n2 - Generate Erosion[{self.planet_name}]")
+        print('')
         for it in range(self.iterations):
-            progress_bar(((it + 1) / self.iterations) * 100)
+            progress_bar(((it + 1) / self.iterations) * 100, prefix=normalize_text(self.display_name, 20))
             x = np.random.randint(1, self.size - 1)
             y = np.random.randint(1, self.size - 1)
             h = heightmap[x, y]

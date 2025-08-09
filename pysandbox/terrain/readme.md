@@ -25,27 +25,27 @@ SEED = np.random.randint(0,100)
 terrain_name = "randon"
 
 terrain = Terrain()
-heightmap = terrain.generate(terrain_name, SIZE, SCALE, OCTAVES, PERSISTENCE, LACUNARITY, SEED, absolute=False)
+heightmap = terrain.generate(SIZE, SCALE, OCTAVES, PERSISTENCE, LACUNARITY, SEED, absolute=False)
 ```
 
 ## Add Components
 
-### Mask
+### Radial Mask
 
 ```python
-terrain.add_component(Mask(planet_name=terrain_name, size=SIZE))
+terrain.add_component(Mask(size=SIZE))
 ```
 
-## River
+## Carve River
 
 ```python
-terrain.add_component(River(planet_name=terrain_name, size=SIZE, iterations=400, length=5))
+terrain.add_component(River(size=SIZE, iterations=400, length=5, sea_level=0.4))
 ```
 
 ## Erosion
 
 ```python
-terrain.add_component(Erosion(planet_name=terrain_name, size=SIZE, iterations=50000))
+terrain.add_component(Erosion(size=SIZE, iterations=50000))
 ```
 
 
