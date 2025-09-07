@@ -1,4 +1,3 @@
-import os
 import numpy as np
 from numpy.typing import NDArray
 import matplotlib.pyplot as plt
@@ -9,10 +8,48 @@ from pysandbox.ecs.entity import Entity
 
 
 class Terrain(Entity):
-    # 1. Generate Perlin Noise Terrain
-    heightmap = None
-    def generate(self, size: int, scale: float, octaves: float, persistence: float, lacunarity: float, seed: float, absolute=False) -> NDArray[np.float64]:
+    """
+    Base terrain entity that generates the initial heightmap for a planet.
+
+    This class provides the starting elevation field using procedural noise
+    (Perlin, fractal, or custom). 
+    
+    It acts as the foundation on which additional
+    layers (e.g., ShapeLayer, RiverCarverLayer, ErosionLayer) 
+    are applied to shape the final terrain.
+    
+    """
+    
+    def run(self: "Terrain", size: int, scale: float, octaves: float, persistence: float, lacunarity: float, seed: float, absolute=False) -> NDArray[np.float32]:
+        """
+        Creates the base heightmap using noise and normalizes it to [0, 1].
+        
+        Parameters
+        ----------
+        
+        size (int): 
+            Resolution of the heightmap (width x height).
+        scale (float):
+            Noise scaling factor, controlling zoom of terrain features.
+        octaves (float):
+            Number of noise octaves for fractal detail.
+        persistence (float): 
+            Amplitude decay across octaves (lower = smoother).
+        lacunarity (float):
+            Frequency growth across octaves (higher = sharper).
+        seed (float):
+            Random seed for deterministic generation.
+        absolute (bool):
+            When True use abs to generated noise
+        
+        Returns
+        -------
+        heightmap (NDArray[np.float32])
+            2D array of normalized float values (0.0-1.0)
+        """
         print('')
+        custom_args = {"octaves": octaves, "persistence": persistence, "lacunarity": lacunarity}
+        custom_args = {x: custom_args[x] for x in custom_args if custom_args[x] > 0}
         terrain = np.zeros((size, size), dtype=np.float32)
         for x in range(size):
             progress_bar(((x + 1) / size) * 100, normalize_text(f"Generate Terrain", 20))
@@ -22,9 +59,7 @@ class Terrain(Entity):
                 value = pnoise2(
                     nx,
                     ny,
-                    octaves=octaves,
-                    persistence=persistence,
-                    lacunarity=lacunarity,
+                    **custom_args,
                     repeatx=size,
                     repeaty=size,
                     base=seed
@@ -33,41 +68,8 @@ class Terrain(Entity):
         # normalize
         return normalize_terrain(terrain)
     
-    def join(self, heightmap):
-        for _, component in self._components.items():
-            heightmap = component.apply(heightmap)
-        return heightmap
-    
-    def separate(self, heightmap):
+    def separate(self: "Terrain", heightmap):
         return [('Original', heightmap)] + [
             (component.display_name, component.apply(heightmap.copy())) 
             for _, component in self._components.items()
         ]
-
-class Heightmap:
-    @staticmethod
-    def save(heightmap, base_path, filename='heightmap.jpg'):
-        print("\nSaving heighmap")
-        img = (heightmap * 255).astype(np.uint8)
-        img = Image.fromarray(img)
-        if not os.path.isdir(base_path):
-            os.mkdir(base_path)
-        img.save(f'{base_path}/{filename}')
-    
-    @staticmethod
-    def display(maps: list):
-        map_size = len(maps)
-        if map_size == 1:
-            label, imap = maps[0]
-            plt.imshow(imap, cmap='terrain')
-            plt.title(label)
-            plt.colorbar()
-            plt.show()
-            return
-        # 3. Display result
-        fig, axs = plt.subplots(1, map_size, figsize=(12, 6))
-        for i in range(map_size):
-            label, imap = maps[i]
-            axs[i].imshow(imap, cmap='terrain')
-            axs[i].set_title(label)
-        plt.show()
